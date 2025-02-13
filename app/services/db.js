@@ -1,5 +1,8 @@
+// db.js is handling the backend of the web application
+
 require("dotenv").config();
 
+// A Promise is an object representing the eventual completion or failure of an asynchronous operation
 const mysql = require('mysql2/promise');
 
 const config = {
@@ -18,6 +21,7 @@ const config = {
 const pool = mysql.createPool(config.db);
 
 // Utility function to query the database
+// Handles sending a query to the database
 async function query(sql, params) {
   const [rows, fields] = await pool.execute(sql, params);
 

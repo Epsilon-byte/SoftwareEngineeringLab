@@ -1,7 +1,9 @@
 // Imports express.js
+// Using express framework
 const express = require("express");
 
 // Creates express app
+// Creating a variable/object of express
 var app = express();
 
 // Adds static files location
@@ -11,9 +13,86 @@ app.use(express.static("static"));
 const db = require('./services/db');
 
 // Creates a route for root - /
+// app.get acts as a controller for the web application
 app.get("/", function(req, res) {
     res.send("Hello world!");
 });
+
+// Week 4 Task One
+// Providing a JSON output listing all students
+app.get("/all-students", function(req, res) {
+    var sql = 'select * from Students';
+    //Using .then to ensure we get the results
+    // before we do anything else
+    db.query(sql).then(results => {
+        console.log(results);
+        res.json(results);
+    });
+});
+
+// Week 4 Task Two
+// Provide an HTML formatted output listing all students
+// in a table where each student is linked to a single-student
+// page
+app.get("/all-students-formatted", function(req, res) {
+    var sql = 'select * from Students';
+    //Using .then to ensure we get the results
+    // before we do anything else
+    var output = '<table border="1px" >';
+    db.query(sql).then(results => {
+        for (var row of results) {
+            output += '<tr>';
+            output += '<td>' + row.id + '</td>';
+            output += '<td>' + '<a href ="./single-student/' + row.id + '">' + row.name + '</a>' + '</td>';
+            output += '</tr>';
+        }
+        output += '</table>';
+        //The results are only available within
+        // the then block
+        res.send(output)
+    });
+});
+
+// Week 4 Task Three
+// Creating a single-student page which lists a
+// student name, their programme and their modules
+app.get("/single-student/:id", function(req, res){
+    var stid = req.params.id;
+    // Building a query
+    var stSql = "SELECT s.name as student, ps.name as programme, ps.id as pcode\
+    from Students s \
+    JOIN Student_Programme sp on sp.id = s.id \
+    JOIN Programmes ps on ps.id = sp.programme \
+    WHERE s.id = ?"
+    var modSql = "SELECT * FROM Programme_Modules pm \
+    JOIN Modules m on m.code = pm.module \
+    WHERE programme = ?";
+    // Executes the query in the then block
+    // When the results are complete
+    db.query(stSql, [stid]).then(results => {
+        console.log(results);
+        var pCode = results[0].pcode;
+        output = '';
+        output += '<div><b>Student: </b>' + results[0].student + '</div>';
+        output += '<div><b>Programme: </b>' + results[0].programme + '</div>';
+
+        // Now call the database for the modules
+        db.query(modSql, [pCode]).then(results => {
+            output += '<table border="1px">';
+            for (var row of results) {
+                output += '<tr>';
+                output += '<td>' + row.module + '</td>';
+                output += '<td>' + row.name + '</td>';
+                output += '</tr>';
+
+            }
+            output += '</table>';
+            res.send(output);
+        });
+        
+    });
+});
+
 
 // Creates a route for testing the db
 app.get("/db_test", function(req, res) {
@@ -79,7 +158,7 @@ app.get("/db_test/:id", function(req, res){
         `);
     }).catch(err => {
         console.error(err);
-        //In case there are any issues, it will send out an error 500 status message
+        // In case there are any issues, it will send out an error 500 status message
         res.status(500).send("An error occurred while retrieving data.");
     });
 });
@@ -87,20 +166,20 @@ app.get("/db_test/:id", function(req, res){
 
 
 
-// Create a route for /goodbye
+// Creates a route for /goodbye
 // Responds to a 'GET' request
 app.get("/goodbye", function(req, res) {
     res.send("Goodbye world!");
 });
 
-// Create a dynamic route for /hello/<name>, where name is any value provided by user
+// Creates a dynamic route for /hello/<name>, where name is any value provided by user
 // At the end of the URL
 // Responds to a 'GET' request
 app.get("/hello/:name", function(req, res) {
     // req.params contains any parameters in the request
     // We can examine it in the console for debugging purposes
     console.log(req.params);
-    //  Retrieve the 'name' parameter and use it in a dynamically generated page
+    //  Retrieves the 'name' parameter and use it in a dynamically generated page
     res.send("Hello " + req.params.name);
 });
 
